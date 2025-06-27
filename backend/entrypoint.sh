@@ -7,6 +7,6 @@ echo "Initializing database..."
 flask init-db
 
 echo "Starting Gunicorn server..."
-# Use exec to replace the shell process with the Gunicorn process.
-# This is important for proper signal handling (e.g., when Docker stops the container).
-exec gunicorn --bind 0.0.0.0:5000 --preload "app:app"
+# MODIFIED: Removed the --preload flag to prevent startup conflicts.
+# The database is already initialized by the command above.
+exec gunicorn --bind 0.0.0.0:5000 "app:app"

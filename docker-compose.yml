@@ -1,6 +1,6 @@
 # docker-compose.yml
 # This file defines the services for your application stack.
-# Added a healthcheck to prevent startup race conditions.
+# The healthcheck start_period has been increased for more reliability.
 
 version: '3.8'
 
@@ -17,7 +17,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s # MODIFIED: Increased to give more startup time
     networks:
       - financial-net
 
@@ -28,7 +28,7 @@ services:
     restart: always
     depends_on:
       backend:
-        condition: service_healthy # MODIFIED: This makes the frontend wait.
+        condition: service_healthy 
     networks:
       - financial-net
 
