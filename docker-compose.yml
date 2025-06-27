@@ -1,0 +1,59 @@
+# docker-compose.yml
+# This file defines the services for your application stack.
+# You can deploy this directly in Portainer.
+#
+# Services:
+#   - backend: The Python Flask application that serves the API.
+#   - frontend: An Nginx server to serve the HTML, CSS, and JS files.
+#   - cloudflared: Creates a secure tunnel using Cloudflare for remote access.
+#
+# To use the Cloudflare Tunnel:
+# 1. Log in to your Cloudflare account.
+# 2. Navigate to Zero Trust -> Access -> Tunnels.
+# 3. Create a new tunnel and get your token.
+# 4. In Portainer, create a new stack, paste this docker-compose.yml content.
+# 5. Go to the "Environment variables" section for the 'cloudflared' service.
+# 6. Add a variable with the name "TUNNEL_TOKEN" and paste your token as the value.
+# 7. Deploy the stack. Cloudflared will connect and give you a public URL.
+
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: financial_backend
+    restart: always
+    volumes:
+      - ./backend/data:/app/data
+    networks:
+      - financial-net
+
+  frontend:
+    image: nginx:alpine
+    container_name: financial_frontend
+    restart: always
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf # Add this line to use custom Nginx config
+    depends_on:
+      - backend
+    networks:
+      - financial-net
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: financial_cloudflared
+    restart: always
+    command: tunnel --no-autoupdate run
+    environment:
+      # Set your TUNNEL_TOKEN in Portainer's stack environment variables
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN} 
+    depends_on:
+      - frontend
+    networks:
+      - financial-net
+
+networks:
+  financial-net:
+    driver: bridge
