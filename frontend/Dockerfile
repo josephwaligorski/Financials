@@ -1,11 +1,11 @@
 # frontend/Dockerfile
-# This new file builds our custom Nginx image.
+# This file now copies ALL frontend assets into the image.
 
 # Start from the official Nginx image
 FROM nginx:alpine
 
-# Copy our custom configuration file into the container.
-# This replaces the default Nginx configuration.
+# Copy our custom Nginx configuration file.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# No other steps are needed. The base image handles the rest.
+# ADDED: Copy the frontend application files into the Nginx web root.
+COPY index.html /usr/share/nginx/html/

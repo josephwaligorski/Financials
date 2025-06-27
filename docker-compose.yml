@@ -1,6 +1,6 @@
 # docker-compose.yml
 # This file defines the services for your application stack.
-# The 'frontend' service is now built from a Dockerfile for better stability.
+# The 'frontend' service no longer uses runtime volumes to prevent mounting errors.
 
 version: '3.8'
 
@@ -17,13 +17,11 @@ services:
 
   frontend:
     build:
-      context: ./frontend  # MODIFIED: Build the frontend image from its directory
+      context: ./frontend
     container_name: financial_frontend
     restart: always
-    volumes:
-      # This volume now only mounts the index.html file, allowing you to edit it
-      # without rebuilding the image. The configuration is baked into the image.
-      - ./frontend/index.html:/usr/share/nginx/html/index.html # MODIFIED
+    # REMOVED: The volumes section has been removed entirely from this service.
+    # All frontend files are now part of the image built by frontend/Dockerfile.
     depends_on:
       - backend
     networks:
