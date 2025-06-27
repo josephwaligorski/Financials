@@ -1,6 +1,6 @@
 # docker-compose.yml
 # This file defines the services for your application stack.
-# The 'frontend' service no longer uses runtime volumes to prevent mounting errors.
+# Added a healthcheck to prevent startup race conditions.
 
 version: '3.8'
 
@@ -12,6 +12,12 @@ services:
     restart: always
     volumes:
       - ./backend/data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     networks:
       - financial-net
 
@@ -20,10 +26,9 @@ services:
       context: ./frontend
     container_name: financial_frontend
     restart: always
-    # REMOVED: The volumes section has been removed entirely from this service.
-    # All frontend files are now part of the image built by frontend/Dockerfile.
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy # MODIFIED: This makes the frontend wait.
     networks:
       - financial-net
 

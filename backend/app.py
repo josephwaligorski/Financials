@@ -49,6 +49,13 @@ def to_dict(instance):
     return {c.name: getattr(instance, c.name) for c in instance.__table__.columns}
 
 # --- API Endpoints ---
+
+# ADDED: Healthcheck endpoint for Docker to verify the app is running.
+@app.route('/health')
+def health_check():
+    """Confirms the app is alive."""
+    return "OK", 200
+
 @app.route('/api/data', methods=['GET'])
 def get_all_data():
     """Fetches all data from the database."""
