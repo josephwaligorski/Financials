@@ -27,7 +27,7 @@ services:
     container_name: financial_frontend
     restart: always
     depends_on:
-      backend:
+      - backend
     networks:
       - financial-net
 
