@@ -1,6 +1,5 @@
 # backend/app.py
-# This is the main Flask application file.
-# It defines the API endpoints to interact with the financial data stored in SQLite.
+# The database initialization logic has been moved into a custom CLI command.
 
 import os
 from flask import Flask, jsonify, request
@@ -12,12 +11,10 @@ app = Flask(__name__)
 CORS(app) # Enable Cross-Origin Resource Sharing
 
 # --- Database Configuration ---
-# Create a 'data' directory if it doesn't exist
 data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
-# Configure the SQLite database
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(data_dir, "finance.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -44,29 +41,34 @@ class ExpenseEntry(db.Model):
     item = db.Column(db.String(100))
     cost = db.Column(db.Float)
 
-# --- Database Initialization ---
-# This block now runs when the app is first loaded by the server.
-# The `--preload` flag in the Dockerfile's CMD ensures it only runs once.
-with app.app_context():
-    db.create_all()
-    # Check if DB is empty before seeding to prevent duplicate data
-    if not GhlEntry.query.first() and not StripeEntry.query.first() and not ExpenseEntry.query.first():
-        initial_ghl_data = [
-            { 'source': 'Client A', 'service': 'Agency Unlimited', 'clients': 1, 'rate': 297.00, 'multiplier': 1.5 },
-            { 'source': 'Client B', 'service': 'Agency Starter', 'clients': 1, 'rate': 97.00, 'multiplier': 1 },
-        ]
-        initial_stripe_data = [
-            { 'service': 'Website Setup', 'type': 'One-Time', 'transactions': 3, 'price': 1500.00 },
-            { 'service': 'SEO Subscription', 'type': 'Recurring', 'transactions': 10, 'price': 500.00 },
-        ]
-        initial_expenses_data = [
-            { 'category': 'Software', 'item': 'Google Workspace', 'cost': 12.00 },
-            { 'category': 'Marketing', 'item': 'Facebook Ads', 'cost': 1000.00 },
-        ]
-        for item in initial_ghl_data: db.session.add(GhlEntry(**item))
-        for item in initial_stripe_data: db.session.add(StripeEntry(**item))
-        for item in initial_expenses_data: db.session.add(ExpenseEntry(**item))
-        db.session.commit()
+# --- NEW: A CLI command to initialize the database ---
+@app.cli.command("init-db")
+def init_db_command():
+    """Creates the database tables and seeds initial data."""
+    with app.app_context():
+        db.create_all()
+        # Check if DB is empty before seeding to prevent duplicate data
+        if not GhlEntry.query.first() and not StripeEntry.query.first() and not ExpenseEntry.query.first():
+            initial_ghl_data = [
+                { 'source': 'Client A', 'service': 'Agency Unlimited', 'clients': 1, 'rate': 297.00, 'multiplier': 1.5 },
+                { 'source': 'Client B', 'service': 'Agency Starter', 'clients': 1, 'rate': 97.00, 'multiplier': 1 },
+            ]
+            initial_stripe_data = [
+                { 'service': 'Website Setup', 'type': 'One-Time', 'transactions': 3, 'price': 1500.00 },
+                { 'service': 'SEO Subscription', 'type': 'Recurring', 'transactions': 10, 'price': 500.00 },
+            ]
+            initial_expenses_data = [
+                { 'category': 'Software', 'item': 'Google Workspace', 'cost': 12.00 },
+                { 'category': 'Marketing', 'item': 'Facebook Ads', 'cost': 1000.00 },
+            ]
+            for item in initial_ghl_data: db.session.add(GhlEntry(**item))
+            for item in initial_stripe_data: db.session.add(StripeEntry(**item))
+            for item in initial_expenses_data: db.session.add(ExpenseEntry(**item))
+            db.session.commit()
+            print("Database seeded with initial data.")
+        else:
+            print("Database already exists. Skipping seeding.")
+    print("Database initialization complete.")
 
 # --- Helper to convert model to dict ---
 def to_dict(instance):
