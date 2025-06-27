@@ -28,7 +28,6 @@ services:
     restart: always
     depends_on:
       backend:
-        condition: service_healthy 
     networks:
       - financial-net
 
