@@ -50,7 +50,7 @@ def to_dict(instance):
 
 # --- API Endpoints ---
 
-# ADDED: Healthcheck endpoint for Docker to verify the app is running.
+# Healthcheck endpoint for Docker to verify the app is running.
 @app.route('/health')
 def health_check():
     """Confirms the app is alive."""
@@ -59,10 +59,9 @@ def health_check():
 @app.route('/api/data', methods=['GET'])
 def get_all_data():
     """Fetches all data from the database."""
-    with app.app_context():
-        ghl_data = [to_dict(entry) for entry in GhlEntry.query.all()]
-        stripe_data = [to_dict(entry) for entry in StripeEntry.query.all()]
-        expense_data = [to_dict(entry) for entry in ExpenseEntry.query.all()]
+    ghl_data = [to_dict(entry) for entry in GhlEntry.query.all()]
+    stripe_data = [to_dict(entry) for entry in StripeEntry.query.all()]
+    expense_data = [to_dict(entry) for entry in ExpenseEntry.query.all()]
     return jsonify({
         'ghl': ghl_data,
         'stripe': stripe_data,
@@ -74,53 +73,53 @@ def update_all_data():
     """Receives all data from the frontend and updates the database."""
     data = request.json
     
-    with app.app_context():
-        # Clear existing data
-        db.session.query(GhlEntry).delete()
-        db.session.query(StripeEntry).delete()
-        db.session.query(ExpenseEntry).delete()
+    # Clear existing data
+    db.session.query(GhlEntry).delete()
+    db.session.query(StripeEntry).delete()
+    db.session.query(ExpenseEntry).delete()
 
-        # Add new data from payload, ensuring 'id' is not passed to the constructor
-        for item in data.get('ghl', []):
-            item.pop('id', None)
-            db.session.add(GhlEntry(**item))
-        for item in data.get('stripe', []):
-            item.pop('id', None)
-            db.session.add(StripeEntry(**item))
-        for item in data.get('expenses', []):
-            item.pop('id', None)
-            db.session.add(ExpenseEntry(**item))
-            
-        db.session.commit()
+    # Add new data from payload, ensuring 'id' is not passed to the constructor
+    for item in data.get('ghl', []):
+        item.pop('id', None)
+        db.session.add(GhlEntry(**item))
+    for item in data.get('stripe', []):
+        item.pop('id', None)
+        db.session.add(StripeEntry(**item))
+    for item in data.get('expenses', []):
+        item.pop('id', None)
+        db.session.add(ExpenseEntry(**item))
+        
+    db.session.commit()
         
     return jsonify({'message': 'Data saved successfully'}), 200
 
 # --- Database Initialization ---
+@app.before_first_request
 def initialize_database():
     """Creates database tables and populates with initial data if empty."""
-    with app.app_context():
-        db.create_all()
-        # Check if DB is empty before seeding
-        if not GhlEntry.query.first() and not StripeEntry.query.first() and not ExpenseEntry.query.first():
-            initial_ghl_data = [
-                { 'source': 'Client A', 'service': 'Agency Unlimited', 'clients': 1, 'rate': 297.00, 'multiplier': 1.5 },
-                { 'source': 'Client B', 'service': 'Agency Starter', 'clients': 1, 'rate': 97.00, 'multiplier': 1 },
-            ]
-            initial_stripe_data = [
-                { 'service': 'Website Setup', 'type': 'One-Time', 'transactions': 3, 'price': 1500.00 },
-                { 'service': 'SEO Subscription', 'type': 'Recurring', 'transactions': 10, 'price': 500.00 },
-            ]
-            initial_expenses_data = [
-                { 'category': 'Software', 'item': 'Google Workspace', 'cost': 12.00 },
-                { 'category': 'Marketing', 'item': 'Facebook Ads', 'cost': 1000.00 },
-            ]
-            for item in initial_ghl_data: db.session.add(GhlEntry(**item))
-            for item in initial_stripe_data: db.session.add(StripeEntry(**item))
-            for item in initial_expenses_data: db.session.add(ExpenseEntry(**item))
-            db.session.commit()
+    # This function now runs once before the first request,
+    # ensuring the app is ready before performing DB operations.
+    db.create_all()
+    # Check if DB is empty before seeding
+    if not GhlEntry.query.first() and not StripeEntry.query.first() and not ExpenseEntry.query.first():
+        initial_ghl_data = [
+            { 'source': 'Client A', 'service': 'Agency Unlimited', 'clients': 1, 'rate': 297.00, 'multiplier': 1.5 },
+            { 'source': 'Client B', 'service': 'Agency Starter', 'clients': 1, 'rate': 97.00, 'multiplier': 1 },
+        ]
+        initial_stripe_data = [
+            { 'service': 'Website Setup', 'type': 'One-Time', 'transactions': 3, 'price': 1500.00 },
+            { 'service': 'SEO Subscription', 'type': 'Recurring', 'transactions': 10, 'price': 500.00 },
+        ]
+        initial_expenses_data = [
+            { 'category': 'Software', 'item': 'Google Workspace', 'cost': 12.00 },
+            { 'category': 'Marketing', 'item': 'Facebook Ads', 'cost': 1000.00 },
+        ]
+        for item in initial_ghl_data: db.session.add(GhlEntry(**item))
+        for item in initial_stripe_data: db.session.add(StripeEntry(**item))
+        for item in initial_expenses_data: db.session.add(ExpenseEntry(**item))
+        db.session.commit()
 
-# Create tables when the app starts
-initialize_database()
+# The direct call to initialize_database() has been removed from here.
 
 if __name__ == '__main__':
     app.run()
