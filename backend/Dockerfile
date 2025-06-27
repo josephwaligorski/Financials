@@ -4,7 +4,7 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# ADDED: Install curl for the healthcheck to work
+# Install curl for the healthcheck to work
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory in the container
@@ -26,5 +26,6 @@ EXPOSE 5000
 ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
-# Run gunicorn when the container launches for production
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# MODIFIED: Run gunicorn with the --preload flag.
+# This ensures the app is loaded once in the master process before workers are forked.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--preload", "app:app"]
